@@ -60,6 +60,10 @@ This project is an independent compatibility effort intended for research, exper
 
 All trademarks belong to their respective owners. Users are responsible for supplying their own legally obtained copy of the original game.
 
+🙏 Credits
+
+Bassquake — Original Smash Hit VR compatibility patch, which serves as the foundation for this project.
+
 ---
 
 *Keeping classic VR experiences alive, one projection matrix at a time.*
