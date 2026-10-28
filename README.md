@@ -2,81 +2,102 @@
 
 **Bringing the classic VR experience back to modern standalone Meta Quest headsets.**
 
-Smash Hit VR was built for an older generation of mobile VR. On newer headsets, differences in projection geometry, rendering resolution, and runtime behavior can cause image misalignment and visual distortion. This project applies targeted compatibility changes to the original game's legacy VR pipeline rather than rebuilding the game from scratch.
+Smash Hit VR was built for an older generation of mobile VR. On newer headsets, differences in projection geometry, render resolution, and runtime behavior can cause image misalignment and visual distortion. This project builds on **Bassquake's original compatibility patch** and adapts the game's legacy VR pipeline for modern Meta Quest headsets.
 
-Version **v0.14** returns to the clean **e0.25.6** baseline and packages separate rendering profiles for Meta Quest 2, Quest Pro, Quest 3, and Quest 3S.
+Version **v0.15** refines the per-headset render-scale coefficients and radial UV alignment, updates the Quest Pro and Quest 3 rendering profiles, and adds the **REMASTERED** wordmark to the title screen.
 
 ## ✨ Features
 
-- **Per-headset rendering profiles** — Selects a dedicated engine profile for Quest 2, Quest Pro, Quest 3, or Quest 3S.
-- **Projection tuning** — Uses headset-specific camera FOV and vertical projection shift values to improve alignment and perceived scale.
-- **Selective radial correction** — Keeps the existing custom radial post-process on Quest Pro and Quest 3, while bypassing it on Quest 2 and Quest 3S.
-- **Stereo scaling** — Uses the relationship `stereo factor = IPD in mm / 2000`. The current fallback is 61 mm; an Android debug-property override can be supplied at launch.
-- **Legacy VrApi compatibility** — Retains the original game's VrApi-based rendering path and the controller-input injection fix from e0.25.6.
-- **Cleaner main package** — Excludes first-generation Quest from the main build and removes redundant native engine payloads.
-- **Application label** — Uses **Smash Hit VR Remastered** as the Android application name.
+- **Per-headset rendering profiles** — Separate engine profiles for Meta Quest 2, Quest Pro, Quest 3, and Quest 3S.
+- **Adjusted render scaling** — Documents each profile's native render-scale coefficient alongside its intended linear supersampling target.
+- **Radial UV correction** — Quest Pro and Quest 3 use dedicated radial post-processing profiles with headset-specific vertical centering and opposite horizontal UV offsets for the two eyes.
+- **Updated projection parameters** — Refined FOV and vertical-shift values for Quest Pro and Quest 3.
+- **Legacy VrApi compatibility** — Preserves the game's original VrApi-based rendering path and the existing controller-input compatibility fix.
+- **Updated title screen** — Adds the **REMASTERED** wordmark.
+- **Focused compatibility scope** — The main build targets Quest 2, Quest Pro, Quest 3, and Quest 3S. First-generation Quest and Oculus Go require a separate legacy build.
 
 ## 🎯 Headset profiles
 
-| Headset | Engine profile | Linear supersampling | Camera FOV | Vertical shift (M12) | Custom radial post-process |
-|---|---|---:|---:|---:|---|
-| Meta Quest 2 | `libsmashhit_q2.so` | 1.25× (fixed) | 90° | 0.00 | Bypassed |
-| Meta Quest Pro | `libsmashhit.so` | 1.5× | 93° | 0.22 | Enabled |
-| Meta Quest 3 | `libsmashhit_q3.so` | 1.5× | 95° | 0.22 | Enabled |
-| Meta Quest 3S | `libsmashhit_q3s.so` | 1.5× | 90° | 0.00 | Bypassed |
+| Headset | Engine profile | Linear SS target | Native render-scale coefficient | Camera FOV | M12 vertical shift | Radial correction |
+|---|---|---:|---:|---:|---:|---|
+| Meta Quest 2 | `libsmashhit_q2.so` | 1.25× | `1.420139` | 90° | `0.000` | Bypassed |
+| Meta Quest Pro | `libsmashhit_pro.so` | 1.5× | `1.6875` | 92.9° | `0.209` | Enabled |
+| Meta Quest 3 | `libsmashhit_q3.so` | 1.5× | `1.671429` | 94° | `0.193` | Enabled |
+| Meta Quest 3S | `libsmashhit_q3s.so` | 1.5× | `1.567857` | 90° | `0.000` | Bypassed |
 
-These are the configured profile values, not a claim that every headset/firmware combination has been fully validated. The Quest Pro configuration at **61 mm IPD** remains the main calibration reference. Please test on each target device before treating the build as production-ready.
+**Important:** the linear SS target and native render-scale coefficient are different values and are not interchangeable. The coefficient accounts for the intermediate render resolution used by that profile. Supersampled target dimensions below are calculated estimates, not measurements collected from a live headset session.
 
-## 🧭 Current status — v0.14
+| Headset | Intermediate resolution per eye | Estimated target per eye at the listed linear SS |
+|---|---:|---:|
+| Quest 2 | 1636 × 1752 | 2045 × 2190 |
+| Quest Pro | 1620 × 1752 | 2430 × 2628 |
+| Quest 3 | 1872 × 1984 | 2808 × 2976 |
+| Quest 3S | 1756 × 1840 | 2634 × 2760 |
 
-v0.14 is based on the clean e0.25.6 codebase. It consolidates the four-device main-build profiles and removes first-generation Quest support from the main manifest. Quest 1 and Oculus Go are outside the scope of the main build and require a separate legacy path.
+The FOV values above are camera FOV arguments configured in the game engine. They are not direct measurements of the physical optical field of view visible through each headset's lenses.
 
-A dedicated in-game pause remap on controller **B/Y is not included** in v0.14. An experimental native hook caused a crash when pressed and was removed pending a correct implementation.
+## 🔬 Radial correction
 
-## 🔬 Technical approach
+Quest Pro and Quest 3 use separate radial shader profiles. The correction is applied in image space after the eye images have been rendered; it is **not a native asymmetric (Mode 5) projection**. Instead, it remaps texture coordinates to compensate for selected visual alignment and distortion effects.
 
-The project modifies selected parts of the legacy VR rendering pipeline:
+| Parameter | Quest Pro | Quest 3 |
+|---|---:|---:|
+| Radial center X | `0.5000` | `0.5000` |
+| Radial center Y | `0.6045` | `0.5965` |
+| Horizontal UV offset per eye | `−0.04023 / +0.04023` | `−0.04023 / +0.04023` |
+| Radial correction | Enabled | Enabled |
 
-- Model-based selection of the engine profile at startup.
-- Headset-specific FOV and projection-shift values.
-- Selective routing through the existing custom radial processor.
-- Stereo scale derived from the configured IPD value.
-- Compatibility with the game's existing controller-input injection path.
+The vertical radial centers correspond to the configured vertical shifts through the relationship `centerY = 0.5 + M12 / 2`:
 
-The renderer uses a linear supersampling profile per headset. Listed FOV values and profile settings describe the current binary configuration; actual runtime behavior can still depend on the headset, OS/runtime version, and game environment.
+- Quest Pro: `M12 = 0.209` → radial center Y = `0.6045`.
+- Quest 3: `M12 = 0.193` → radial center Y = `0.5965`.
 
-### IPD configuration
+The shader applies opposite horizontal UV offsets to the two eyes. These image-space corrections can improve apparent alignment, but they do not reproduce every property of true off-axis projection or recover image information that was never rendered. The additional radial pass also has a performance cost.
 
-The stereo scale follows:
+Quest 2 and Quest 3S bypass this custom radial post-process in v0.15 and retain their legacy symmetric rendering path.
+
+## 👁️ Stereo and IPD configuration
+
+The stereo factor follows:
 
 ```text
 stereo_factor = ipd_mm / 2000.0
 ```
 
-The fallback is **61 mm**. For testing, set the launch-time Android property before starting the app:
+The initial fallback is **61 mm**, corresponding to a stereo factor of `0.0305`. For testing, an Android debug property can be set before launching the app:
 
-```bat
+```sh
 adb shell setprop debug.smashhit.ipd_mm 64
 adb shell getprop debug.smashhit.ipd_mm
 ```
 
-Use a value in the supported 50–80 mm range. This is a launch-time override; the legacy VrApi path does **not** directly read the headset's physical IPD wheel as a live value.
+Use a value in the supported 50–80 mm range. The bundled IPD watcher can update the engine's stereo factor from runtime eye-matrix data after startup, so the effective value may differ from the initial fallback. Verify runtime behavior on the target device when precise calibration is required.
+
+## 🧭 Current status — v0.15
+
+v0.15 keeps the radial-rendering approach for Quest Pro and Quest 3 rather than replacing it with the separate experimental Mode 5 UI-pipeline candidate. The focus is a comfortable, visually coherent result while preserving the game's existing menu and interface rendering paths.
+
+The radial approach is an intentional image-space compromise, not a claim that radial correction is mathematically identical to asymmetric projection. The listed profile values are the configured binary values; target render dimensions are estimates, and validation across every headset and firmware combination is still needed.
+
+A dedicated in-game pause remap on controller **B/Y is not included**. The previous experimental native hook caused a crash when pressed and was removed pending a reliable implementation.
 
 ## ⚠️ Limitations
 
 - This is an unofficial community compatibility project and is not affiliated with Meta or the original game's developers.
-- Quest 2, Quest Pro, Quest 3, and Quest 3S are the intended targets of the main build; testing on each device and firmware is still needed.
-- First-generation Quest and Oculus Go are not included in the main build.
-- The legacy rendering path may still exhibit visual artifacts, and profile tuning may differ by device/runtime.
+- Quest 2, Quest Pro, Quest 3, and Quest 3S are the intended targets of the main build; testing on every physical headset and firmware version is not complete.
+- First-generation Quest and Oculus Go are not included in the main build and require a separate legacy path.
+- Radial correction is a post-process approximation and may not reproduce every property of native off-axis projection. Visible artifacts can vary by headset and runtime.
+- The radial post-process adds rendering work; its performance impact may vary by device.
 - A dedicated B/Y pause remap is not available in this release.
 - Stop using a build if it causes eye strain, nausea, or other discomfort.
 
 ## 🛠️ Project goals
 
 - Validate each headset profile on physical hardware.
-- Continue refining projection and radial-correction behavior where needed.
+- Continue refining radial correction and render scaling where measurements justify changes.
+- Keep rendering and UI behavior stable while documenting the rationale behind each profile.
 - Implement a safe, reliable in-game pause input for modern Touch controllers.
-- Document the binary analysis and testing workflow so others can reproduce and improve it.
+- Document the binary-analysis and testing workflow so others can reproduce and improve it.
 
 ## 🙏 Credits
 
