@@ -27,7 +27,7 @@ The project focuses on headset-specific native rendering profiles, runtime-based
 | Meta Quest 3 | `libsmashhit_q3.so` | 1.5× | `1.671429` | 94° | `0.193` | Enabled |
 | Meta Quest 3S | `libsmashhit_q3s.so` | 1.5× | `1.567857` | 90° | `0.000` | Bypassed |
 
-**Render-scale note:** the linear supersampling target and native render-scale coefficient are different values. The coefficient accounts for the intermediate render resolution used by each headset profile. Target resolutions derived from these values are estimates, not measurements from every physical headset. The Quest Pro coefficient shown above (`1.51875`) is proportionally recalculated from the previous `1.6875` coefficient for the 1.35× target; it should be checked against the final v0.16 binary before being treated as a verified binary value.
+**Render-scale note:** the linear supersampling target and native render-scale coefficient are different values. The coefficient accounts for the intermediate render resolution used by each headset profile. Target resolutions derived from these values are estimates, not measurements from every physical headset. The Quest Pro coefficient shown above (`1.51875`) is proportionally recalculated from the previous `1.6875` coefficient for the 1.35× target; it should be checked against the final release APK before being treated as a verified binary value.
 
 The FOV values are camera FOV arguments configured in the game engine. They are not direct measurements of the physical optical field of view visible through each headset's lenses.
 
