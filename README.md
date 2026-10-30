@@ -22,10 +22,10 @@ The project focuses on headset-specific native rendering profiles, runtime-based
 
 | Headset | Engine profile | Linear SS target | Native render-scale coefficient | Camera FOV | M12 vertical shift | Radial correction |
 |---|---|---:|---:|---:|---:|---|
-| Meta Quest 2 | `libsmashhit_q2.so` | 1.25× | `1.420139` | 90° | `0.000` | Bypassed |
+| Meta Quest 2 | `libsmashhit_q2.so` | 1.25× | `1.420139` | 87.5°/90.5°/93.5° | `0.000` | Bypassed |
 | Meta Quest Pro | `libsmashhit_pro.so` | 1.35× | **1.51875** | 92.9° | `0.209` | Enabled |
 | Meta Quest 3 | `libsmashhit_q3.so` | 1.5× | `1.671429` | 94° | `0.193` | Enabled |
-| Meta Quest 3S | `libsmashhit_q3s.so` | 1.5× | `1.567857` | 90° | `0.000` | Bypassed |
+| Meta Quest 3S | `libsmashhit_q3s.so` | 1.5× | `1.567857` | 87.5°/90.5°/93.5°  | `0.000` | Bypassed |
 
 **Render-scale note:** the linear supersampling target and native render-scale coefficient are different values. The coefficient accounts for the intermediate render resolution used by each headset profile. Target resolutions derived from these values are estimates, not measurements from every physical headset. The Quest Pro coefficient shown above (`1.51875`) is proportionally recalculated from the previous `1.6875` coefficient for the 1.35× target; it should be checked against the final release APK before being treated as a verified binary value.
 
@@ -80,9 +80,16 @@ Quest 2 and Quest 3S bypass this custom radial post-process and retain their leg
 
 ## ⚙️ Performance and FFR
 
-The game continues to use the legacy VrApi performance-control path. CPU and GPU clock-level arguments are requests to the runtime, not guarantees of fixed hardware frequencies. The headset runtime retains control over actual operating clocks and may adjust them according to workload, thermal conditions, and system policy.
 
-Fixed Foveated Rendering reduces rendering resolution in peripheral regions while retaining higher detail toward the center of the image. FFR does **not** crop or physically reduce the headset's visible field of view. Its visual impact and performance benefit depend on the headset, runtime, and scene.
+**CPU & GPU Levels : It's set by default on CPU level 4 and GPU level 2.**
+
+The game continues to use the legacy VrApi performance-control path. CPU and GPU clock-level arguments are requests to the runtime, not guarantees of fixed hardware frequencies. 
+The headset runtime retains control over actual operating clocks and may adjust them according to workload, thermal conditions, and system policy.
+
+**FFR : It's set by default on value 3**
+
+Fixed Foveated Rendering reduces rendering resolution in peripheral regions while retaining higher detail toward the center of the image. 
+FFR does **not** crop or physically reduce the headset's visible field of view. Its visual impact and performance benefit depend on the headset, runtime, and scene.
 
 ## 🧭 Compatibility and limitations
 
